@@ -9,6 +9,8 @@ from streamlit_echarts import st_echarts
 CARS_IN_POLAND = 19_178_911
 # https://serwisy.gazetaprawna.pl/transport/artykuly/8609065,samochody-elektryczne-w-polsce-raport.html
 ELECTRIC_CARS = 62_135
+# https://www.macrotrends.net/countries/POL/poland/population
+POLAND_POPULATION = 32_413_700 # over 18
 
 COMBUSTION_CARS = CARS_IN_POLAND - ELECTRIC_CARS
 # CO2 KG per KM
@@ -24,32 +26,6 @@ KG_TO_TON = 0.001
 ENERGY_LOSS = (0.1 + 0.25) / 2
 
 BASE_CO2_PER_YEAR = COMBUSTION_CARS * CO2_PER_KM * KM_PER_YEAR * KG_TO_TON
-
-
-def co2_map():
-    st.markdown("### Emisja CO2 w Europie")
-    st.markdown("Polskie elektrownie są w czołówce najbardziej emisyjnych elektrownii w Europie.")
-    st.markdown(
-        "Aż 70% energii w Polsce jest produkowanej w oparciu o węgiel kamiennny lub brunatny. Są to najbardziej emisyjne rodzaje pozyskiwania energii.")
-
-    filepath = "./datasets/co2_emission_country.csv"
-    m = leafmap.Map(center=[50, 20], zoom=4, tiles="stamentoner", max_zoom=5, min_zoom=3)
-    m.add_heatmap(
-        filepath,
-        latitude="latitude",
-        longitude="longitude",
-        value="co2_emission_intensity",
-        name="CO2 emission",
-        radius=40,
-    )
-    m.to_streamlit(height=700)
-    st.markdown("Źródło: Dane dla 2016r. z EEA Europe")
-
-
-def mobility():
-    st.markdown("Polacy są trzecim miejscu w liczbie posiadanych aut na osobę w Unii Europejskiej.")
-    st.markdown("Auta elektryczne stanowią zaledwie **~0.32%** wszystkich samochodów w naszym kraju.")
-
 
 emission_csv = pd.read_csv('datasets/co2-elektrownie.csv', encoding='latin2', sep=';')
 production_csv = pd.read_csv('datasets/energia.csv', encoding='latin2', sep=';')
@@ -73,6 +49,64 @@ CO2_PER_GWH = float(powerplant_co2 / production_gwh) * 1000
 print(f'CO2 PER GWH {CO2_PER_GWH}')
 
 CO2_PER_KM_ELECTRIC_CAR = CO2_PER_GWH * electric_car_eff * WH_TO_GWH * (1 / (1 - ENERGY_LOSS))
+
+def co2_map():
+    col1, col2 = st.columns([1.3, 1])
+
+    with col1:
+        st.markdown("### Emisja CO2 w Europie")
+        st.markdown("Polskie elektrownie są w czołówce najbardziej emisyjnych elektrownii w Europie.")
+        st.markdown(
+            "Aż 70% energii w Polsce jest produkowanej w oparciu o węgiel kamiennny lub brunatny. Są to najbardziej emisyjne sposoby pozyskiwania energii.")
+
+        filepath = "./datasets/co2_emission_country.csv"
+        m = leafmap.Map(center=[50, 20], zoom=4, tiles="stamentoner", max_zoom=5, min_zoom=3)
+        m.add_heatmap(
+            filepath,
+            latitude="latitude",
+            longitude="longitude",
+            value="co2_emission_intensity",
+            name="CO2 emission",
+            radius=40,
+        )
+        m.to_streamlit(height=700)
+        st.markdown("Źródło: Dane dla 2016r. z EEA Europe")
+    
+    with col2:
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("Emisja CO2 w przeliczeniu na kWh")
+        countries_bar_chart()
+
+
+def mobility():
+    col1, col2 = st.columns([1, 4])
+
+    with col1:
+        cars_per_capita = f'<div style="font-family:sans-serif; display: flex; flex-direction:column; justify-content: center; align-items:center"><p style="color:FireBrick; font-size: 42px;">{round(CARS_IN_POLAND / POLAND_POPULATION, 3)}</p><p>samochodów na dorosłą osobę</p></div>'
+        st.markdown(cars_per_capita, unsafe_allow_html=True)
+        st.markdown("##")
+        st.markdown("##")
+
+        electric_percent = ELECTRIC_CARS * 100 / CARS_IN_POLAND 
+        electric = f'<div style="font-family:sans-serif; display: flex; flex-direction:column; justify-content: center; align-items:center"><p style="color:FireBrick; font-size: 42px;">{round(electric_percent, 3)}%</p><p>udział samochodów elektrycznych</p></div>'
+        st.markdown(electric, unsafe_allow_html=True)
+        st.markdown("##")
+        st.markdown("##")
+       
+
+    with col2:
+        st.markdown("##")
+        st.markdown("Polacy są trzecim miejscu w liczbie posiadanych aut na osobę w Unii Europejskiej.")
+
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("Auta elektryczne stanowią zaledwie **~0.324%** wszystkich samochodów w naszym kraju.")
+
 
 def car_slider() -> float:
     st.markdown("#### Kierowcy, którzy zmienili samochody spalinowe na elektryczne")
@@ -122,9 +156,15 @@ def co2_kpi(old_co2, lost_co2, added_co2):
 
 def countries_bar_chart():
     chart = alt.Chart(country_emission).mark_bar().encode(
-        x=alt.X('country:N', sort='y'),
-        y='co2_emission_intensity:Q'
-    )
+        y=alt.Y('country:N', sort='x', title='Kraj'),
+        x=alt.X('co2_emission_intensity:Q', title='Emisja CO2 [g CO2/kWh]'),
+        color="country:N",
+        tooltip=[
+                alt.Tooltip("country:N", title="Kraj"),
+                alt.Tooltip("co2_emission_intensity:Q", title="Emisja CO2"),
+            ],
+
+    ).interactive()
 
     st.altair_chart(chart, use_container_width=True)
 
@@ -151,7 +191,6 @@ def dashboard():
 
     co2_kpi(BASE_CO2_PER_YEAR, lost_co2, added_co2)
 
-    countries_bar_chart()
 
 
 dashboard()
