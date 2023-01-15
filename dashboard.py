@@ -127,19 +127,23 @@ def variants():
     st.markdown("- **Wariant 6**: Przeprowadziliśmy symulacje przyjmując miks energetyczny z innego kraju")
 
 def car_slider() -> float:
+    st.markdown("##")
     st.markdown("#### Kierowcy, którzy zmienili samochody spalinowe na elektryczne")
     st.markdown("Procentowy udział kierowców aut elektrycznych")
     return st.slider('s1', min_value=0, max_value=100, label_visibility="collapsed") / 100
 
 
 def country_select() -> float:
-    st.markdown("#### Miks energetyczny z kraju:")
+    st.markdown("##")
+    st.markdown("##### Miks energetyczny z kraju:")
     return float(country_emission[country_emission['country'] == \
-                            st.selectbox('##### Użyj intensywności emisji kraju', country_emission['country'].unique(), index=20)]['co2_emission_intensity']) * 1000
+                            st.selectbox('##### Użyj intensywności emisji kraju', country_emission['country'].unique(), index=20, label_visibility="collapsed")]['co2_emission_intensity']) * 1000
 
 
 def bus_slider() -> float:
+    st.markdown("##")
     st.markdown("#### Kierowcy, którzy korzystają z samochodów spalinowych oraz autobusów")
+    st.markdown("##")
 
     col1, col2 = st.columns([1, 1])
 
@@ -158,19 +162,29 @@ def co2_kpi(old_co2, lost_co2, added_co2):
     new_co2 = old_co2 - lost_co2 + added_co2
 
     col1, col2, col3 = st.columns(3)
+
+    st.markdown("##")
+    st.markdown("##")
+
     with col1:
+        st.markdown("##### Emisja CO2 z samochodów spalinowych")
         st.metric('Emisja CO2 z samochodów spalinowych',
                   value=f'{lost_co2:,.0f} ton'.replace(',', ' '),
-                  delta=f'{(lost_co2 / old_co2) * 100:.2f}%')
+                  delta=f'{(lost_co2 / old_co2) * 100:.2f}%',
+                  label_visibility="collapsed")
     with col2:
+        st.markdown("##### Emisja CO2 z produkcji energii elektrycznej")
         st.metric('Emisja CO2 z produkcji energii elektrycznej',
                   value=f'{added_co2:,.0f} ton'.replace(',', ' '),
-                  delta=f'{(added_co2 / old_co2) * 100:.2f}%')
+                  delta=f'{(added_co2 / old_co2) * 100:.2f}%',
+                  label_visibility="collapsed")
     with col3:
+        st.markdown("##### Zmiana CO2")
         st.metric('Zmiana CO2',
                   value=f'{(added_co2 - lost_co2):,.0f} ton'.replace(',', ' '),
                   delta=f'{((new_co2 - old_co2) / old_co2) * 100:.2f}%',
-                  delta_color="inverse")
+                  delta_color="inverse",
+                  label_visibility="collapsed")
 
 
 def countries_bar_chart():
@@ -194,9 +208,11 @@ def dashboard():
     st.title("Analiza emisji CO2 i mobilności w Polsce")
     co2_map()
 
+    st.markdown("##")
     st.markdown("### Analiza stanu mobilności ")
     mobility()
 
+    st.markdown("##")
     st.markdown("### Symulacja emisji CO2 w zależności od wykorzystywanych środków transportu")
     analysis_desc()
     car_change = car_slider()
@@ -208,6 +224,8 @@ def dashboard():
     added_car_co2 = COMBUSTION_CARS * car_change * co2_per_km_el * KM_PER_YEAR * KG_TO_TON
     added_bus_co2 = 0
     added_co2 = added_car_co2 + added_bus_co2
+
+    st.markdown("##")
 
     co2_kpi(BASE_CO2_PER_YEAR, lost_co2, added_co2)
 
