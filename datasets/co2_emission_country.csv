@@ -1,0 +1,29 @@
+year,country,latitude,longitude,type,co2_emission_intensity
+2016,Austria,47.516231,14.550072,Electricity generation,85.1
+2016,Belgium,50.503887,4.469936,Electricity generation,169.6
+2016,Bulgaria,42.733883,25.48583,Electricity generation,470.2
+2016,Croatia,45.1,15.2,Electricity generation,210.0
+2016,Cyprus,35.126413,33.429859,Electricity generation,676.9
+2016,Czechia,49.817492,15.472962,Electricity generation,512.7
+2016,Denmark,56.26392,9.501785,Electricity generation,166.1
+2016,Estonia,58.595272,25.013607,Electricity generation,818.9
+2016,Finland,61.92411,25.748151,Electricity generation,112.8
+2016,France,46.227638,2.213749,Electricity generation,58.5
+2016,Germany,51.165691,10.451526,Electricity generation,440.8
+2016,Greece,39.074208,21.824312,Electricity generation,623.0
+2016,Hungary,47.162494,19.503304,Electricity generation,260.4
+2016,Ireland,53.41291,-8.24389,Electricity generation,424.9
+2016,Italy,41.87194,12.56738,Electricity generation,256.2
+2016,Latvia,56.879635,24.603189,Electricity generation,104.9
+2016,Lithuania,55.169438,23.881275,Electricity generation,18.0
+2016,Luxembourg,49.815273,6.129583,Electricity generation,219.3
+2016,Malta,35.937496,14.375416,Electricity generation,648.0
+2016,Netherlands,52.132633,5.291266,Electricity generation,505.2
+2016,Poland,51.919438,19.145136,Electricity generation,773.3
+2016,Portugal,39.399872,-8.224454,Electricity generation,324.7
+2016,Romania,45.943161,24.96676,Electricity generation,306.0
+2016,Slovakia,48.669026,19.699024,Electricity generation,132.3
+2016,Slovenia,46.151241,14.995463,Electricity generation,254.1
+2016,Spain,40.463667,-3.74922,Electricity generation,265.4
+2016,Sweden,60.128161,18.643501,Electricity generation,13.3
+2016,United Kingdom,55.378051,-3.435973,Electricity generation,281.1
