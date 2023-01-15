@@ -5,6 +5,10 @@ import leafmap.foliumap as leafmap
 
 from streamlit_echarts import st_echarts
 
+# NUCLEAR
+# https://pie.net.pl/elektrownie-jadrowe-zapewnia-polsce-prawie-40-proc-zapotrzebowania-na-energie-i-podniosa-pkb-o-ponad-1-proc/
+REACTOR_TWH = 81 / 6
+
 # http://www.cepik.gov.pl/statystyki
 CARS_IN_POLAND = 19_178_911
 # https://serwisy.gazetaprawna.pl/transport/artykuly/8609065,samochody-elektryczne-w-polsce-raport.html
@@ -18,12 +22,23 @@ CO2_PER_KM = 0.1362
 # https://mubi.pl/poradniki/sredni-roczny-przebieg-w-polsce-w-europie/
 KM_PER_YEAR = 8607
 
-KG_TO_TON = 0.001
+KG_TO_TON = 1e-3
 
 # https://www.sciencedirect.com/science/article/pii/S0360544217303730
 ENERGY_LOSS = (0.1 + 0.25) / 2
 
+# TONS CO2
 BASE_CO2_PER_YEAR = COMBUSTION_CARS * CO2_PER_KM * KM_PER_YEAR * KG_TO_TON
+
+# AVERAGE PASSENGERS PER BUS
+AVG_PASSENGERS = 1
+# AVERAGE KM PER BUS
+AVG_KM_BUS = 45
+# AVERAGE CONSUMPTION
+AVG_CONSUMPTION = (1790 + 2350) / 2
+# AVERAGE_PEOPLE IN CAR
+AVG_PEOPLE_IN_CAR = 1.5
+
 
 
 def co2_map():
@@ -59,9 +74,9 @@ country_emission = pd.read_csv('datasets/co2_emission_country.csv')
 powerplant_co2 = \
 emission_csv[(emission_csv['Rok'] == 2020) & (emission_csv['Wyszczególnienie'].str.contains('Region'))][
     'Emisja CO2 [t]'].sum()
-production_gwh = production_csv[(production_csv['Parametr'] == 'RAZEM') & (production_csv['Rok'] == '2020') & (
+production_gwh = float(production_csv[(production_csv['Parametr'] == 'RAZEM') & (production_csv['Rok'] == '2020') & (
             production_csv['Zmienna'] == 'Produkcja energii elektrycznej')] \
-    ['Dane'].str.replace(',', '.').astype(float)
+    ['Dane'].str.replace(',', '.').astype(float))
 # Wh per km
 electric_car_eff = electric_car_csv['Efficiency'].str.split(' ', 0).str[0].median()
 
@@ -82,7 +97,7 @@ def car_slider() -> float:
 
 def country_select() -> float:
     return float(country_emission[country_emission['country'] == \
-                            st.selectbox('##### Użyj intensywności emisji kraju', country_emission['country'].unique())]['co2_emission_intensity']) * 1000
+                            st.selectbox('##### Użyj intensywności emisji kraju', country_emission['country'].unique())]['co2_emission_intensity'])
 
 
 def bus_slider() -> float:
@@ -98,7 +113,7 @@ def bus_slider() -> float:
         st.markdown("##### Procentowy udział podróży autobusem")
         bus_pop = st.slider('s3',
                             min_value=0, max_value=100, label_visibility="collapsed") / 100
-    return bus_share * bus_pop
+    return (bus_share * bus_pop)
 
 
 def co2_kpi(old_co2, lost_co2, added_co2):
@@ -112,7 +127,8 @@ def co2_kpi(old_co2, lost_co2, added_co2):
     with col2:
         st.metric('Wzrost CO2 z produkcji energii elektryczne',
                   value=f'{added_co2:,.0f} ton'.replace(',', ' '),
-                  delta=f'{(added_co2 / old_co2) * 100:.2f}%')
+                  delta=f'{(added_co2 / old_co2) * 100:.2f}%',
+                  delta_color="inverse")
     with col3:
         st.metric('Zmiana CO2',
                   value=f'{(added_co2 - lost_co2):,.0f} ton'.replace(',', ' '),
@@ -129,6 +145,12 @@ def countries_bar_chart():
     st.altair_chart(chart, use_container_width=True)
 
 
+def gwh_par(gwh_changed, current_gwh):
+    print(f'GWH change {gwh_changed}, production {current_gwh}')
+    st.markdown(f'Do zasilenia tych samochodów będziemy musieli zwiększyć naszą '
+                f'produkcję prądu o {gwh_changed / current_gwh * 100:.2f}%.')
+
+
 def dashboard():
     st.set_page_config(layout="wide")
 
@@ -140,18 +162,36 @@ def dashboard():
 
     st.markdown("### Symulacja emisji CO2 w zależności od wykorzystywanych środków transportu")
     car_change = car_slider()
+    # g CO2 / kWH == kg CO2 / MWH == t CO2 / GWH
     bus_change = bus_slider()
     co2_per_gwh = country_select()
+    print(f'{co2_per_gwh}')
+    print(f'{electric_car_eff}')
     co2_per_km_el = co2_per_gwh * electric_car_eff * WH_TO_GWH * (1 / (1 - ENERGY_LOSS))
+    co2_per_km_bus = AVG_CONSUMPTION * co2_per_gwh * WH_TO_GWH * (1 / (1 - ENERGY_LOSS))
+
+    print(f'CO2 fuel {CO2_PER_KM * KG_TO_TON} T/km')
+    print(f'CO2 el {co2_per_km_el} T/km')
+    print(f'CO2 bus {co2_per_km_bus} T/km')
 
     lost_co2 = COMBUSTION_CARS * (car_change + bus_change) * CO2_PER_KM * KM_PER_YEAR * KG_TO_TON
-    added_car_co2 = COMBUSTION_CARS * car_change * co2_per_km_el * KM_PER_YEAR * KG_TO_TON
-    added_bus_co2 = 0
+
+    added_gwh = COMBUSTION_CARS * car_change * electric_car_eff * WH_TO_GWH * (1 / (1 - ENERGY_LOSS)) * KM_PER_YEAR
+
+    added_car_co2 = COMBUSTION_CARS * car_change * co2_per_km_el * KM_PER_YEAR
+    added_bus_co2 = (COMBUSTION_CARS * bus_change / (AVG_PASSENGERS / AVG_PEOPLE_IN_CAR)) *\
+                    AVG_KM_BUS * co2_per_km_bus
+
     added_co2 = added_car_co2 + added_bus_co2
 
     co2_kpi(BASE_CO2_PER_YEAR, lost_co2, added_co2)
 
     countries_bar_chart()
+
+    gwh_par(added_gwh, production_gwh)
+
+    print(f'Power plants CO2 {CO2_PER_GWH * production_gwh / 1000:,.0f}')
+    print(f'Cars CO2 {BASE_CO2_PER_YEAR:,.0f}')
 
 
 dashboard()
