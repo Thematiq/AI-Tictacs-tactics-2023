@@ -68,7 +68,22 @@ print(f'CO2 PER GWH {CO2_PER_GWH}')
 CO2_PER_KM_ELECTRIC_CAR = CO2_PER_GWH * electric_car_eff * WH_TO_GWH * (1 / (1 - ENERGY_LOSS))
 
 
-st.set_page_config(layout='wide')
+def analysis_desc():
+    st.markdown("Celem naszej analizy było sprawdzenie jaki wpływ na emisję dwutlenku węgla, miałaby zmiana samochodów spalinowych na samochody elektryczne lub transport publiczny")
+    st.markdown("Na potrzeby stworzenia modelu, przyjeliśmy następujące założenia:")
+    st.markdown("- Zmiana udziału samochodów spalinowych na rzecz innych środków komunikacji następuje natychmiastowo.")
+    st.markdown("- W momencie zmiany produkcja prądu (oraz jej koszty) rosną, na tyle, aby pokryć zapotrzebowanie.")
+    st.markdown("- Nie uwzględniamy kosztów produkcji pojazdów.")
+    st.markdown("- Przyjmujemy, że samochody spalinowe mają jednakowy poziom emisji oraz jednakowy średni roczny przebieg, będące średnimi wartościami.")
+    st.markdown("- Przyjmujemy, że samochody elektryczne mają jednakowy poziom zużycia prądu oraz jednakowy średni roczny przebieg, będące średnimi wartościami.")
+
+    st.markdown("Opracowaliśmy i przeanalizowaliśmy 5 scenariuszy:")
+    st.markdown("- Wariant 1: X% kierowców wymienia samochód spalinowy na samochód elektryczny. Miks energetyczny pozostaje bez zmian.")
+    st.markdown("- Wariant 2: to samo co wariant 1, ale zakładamy wzrost udziału OZE przy produkcji potrzebnej energii.")
+    st.markdown("- Wariant 3: X% kierowców w Y% sytuacji wybiera podróż autobusem zamiast samochodem spalinowym. Miks energetyczny pozostaje bez zmian.")
+    st.markdown("- Wariant 4: X% kierowców w Y% sytuacji wybiera podróż autobusem zamiast samochodem spalinowym, a Z% kierowców wymiania samochód na elektryczny. Miks energetyczny pozostaje bez zmian.")    
+    st.markdown("- Wariant 5: X% kierowców w Y% sytuacji wybiera podróż autobusem zamiast samochodem spalinowym, a Z% kierowców wymiania samochód na elektryczny. Zakładamy wzrost udziału OZE przy produkcji potrzebnej energii")
+
 
 
 def car_slider() -> float:
@@ -98,15 +113,15 @@ def co2_kpi(old_co2, lost_co2, added_co2):
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric('Spadek CO2 z samochodów spalinowych',
+        st.metric('Emisja CO2 z samochodów spalinowych',
                   value=f'{lost_co2:,.0f} ton'.replace(',', ' '),
                   delta=f'{(lost_co2 / old_co2) * 100:.2f}%')
     with col2:
-        st.metric('Wzrost CO2 z produkcji energii elektryczne',
+        st.metric('Emisja CO2 z produkcji energii elektrycznej',
                   value=f'{added_co2:,.0f} ton'.replace(',', ' '),
                   delta=f'{(added_co2 / old_co2) * 100:.2f}%')
     with col3:
-        st.metric('Zmiana CO2',
+        st.metric('Zmiana emisji CO2',
                   value=f'{(lost_co2 - added_co2):,.0f} ton'.replace(',', ' '),
                   delta=f'{((old_co2 - new_co2) / old_co2)*100:.2f}%',
                   delta_color="inverse")
@@ -122,6 +137,7 @@ def dashboard():
     mobility()
 
     st.markdown("### Symulacja emisji CO2 w zależności od wykorzystywanych środków transportu")
+    analysis_desc()
     car_change = car_slider()
     bus_change = bus_slider()
 
