@@ -237,8 +237,22 @@ def countries_bar_chart():
 
 def gwh_par(gwh_changed, current_gwh):
     print(f'GWH change {gwh_changed}, production {current_gwh}')
-    st.markdown(f'Do zasilenia tych samochodów będziemy musieli zwiększyć naszą '
-                f'produkcję prądu o {gwh_changed / current_gwh * 100:.2f}%.')
+
+    st.markdown("##")
+    st.markdown("##### Wzrost produkcji energii elektrycznej")
+    st.markdown("##")
+
+    col1, col2 = st.columns([1, 4])
+
+    electricity = f'<div style="font-family:sans-serif; display: flex; flex-direction:column; justify-content: center; align-items:center"><p style="color:Ivory; font-size: 42px;">{gwh_changed / current_gwh * 100:.2f}%</p></div>'
+
+
+    with col1:
+        st.markdown(electricity, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("##")
+        st.markdown("o tyle procent będziemy musieli zwiększyć naszą produkcję prądu, aby zasilić te samochody i autobusy elektryczne")
 
 
 def dashboard():
