@@ -13,6 +13,8 @@ REACTOR_TWH = 81 / 6
 CARS_IN_POLAND = 19_178_911
 # https://serwisy.gazetaprawna.pl/transport/artykuly/8609065,samochody-elektryczne-w-polsce-raport.html
 ELECTRIC_CARS = 62_135
+# https://www.macrotrends.net/countries/POL/poland/population
+POLAND_POPULATION = 32_413_700 # over 18
 
 COMBUSTION_CARS = CARS_IN_POLAND - ELECTRIC_CARS
 # CO2 KG per KM
@@ -89,19 +91,92 @@ print(f'CO2 PER GWH {CO2_PER_GWH}')
 
 CO2_PER_KM_ELECTRIC_CAR = CO2_PER_GWH * electric_car_eff * WH_TO_GWH * (1 / (1 - ENERGY_LOSS))
 
+
+def co2_map():
+    col1, col2 = st.columns([1.3, 1])
+
+    with col1:
+        st.markdown("### Emisja CO2 w Europie")
+        st.markdown("Polskie elektrownie są w czołówce najbardziej emisyjnych elektrownii w Europie.")
+        st.markdown(
+            "Aż 70% energii w Polsce jest produkowanej w oparciu o węgiel kamiennny lub brunatny. Są to najbardziej emisyjne sposoby pozyskiwania energii.")
+
+        filepath = "./datasets/co2_emission_country.csv"
+        m = leafmap.Map(center=[50, 20], zoom=4, tiles="stamentoner", max_zoom=5, min_zoom=3)
+        m.add_heatmap(
+            filepath,
+            latitude="latitude",
+            longitude="longitude",
+            value="co2_emission_intensity",
+            name="CO2 emission",
+            radius=40,
+        )
+        m.to_streamlit(height=700)
+        st.markdown("Źródło: Dane dla 2016r. z EEA Europe")
+
+    with col2:
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("Emisja CO2 w przeliczeniu na kWh")
+        countries_bar_chart()
+
+
+def mobility():
+    col1, col2 = st.columns([1, 4])
+
+    with col1:
+        cars_per_capita = f'<div style="font-family:sans-serif; display: flex; flex-direction:column; justify-content: center; align-items:center"><p style="color:FireBrick; font-size: 42px;">{round(CARS_IN_POLAND / POLAND_POPULATION, 3)}</p><p>samochodów na dorosłą osobę</p></div>'
+        st.markdown(cars_per_capita, unsafe_allow_html=True)
+        st.markdown("##")
+        st.markdown("##")
+
+        electric_percent = ELECTRIC_CARS * 100 / CARS_IN_POLAND
+        electric = f'<div style="font-family:sans-serif; display: flex; flex-direction:column; justify-content: center; align-items:center"><p style="color:FireBrick; font-size: 42px;">{round(electric_percent, 3)}%</p><p>udział samochodów elektrycznych</p></div>'
+        st.markdown(electric, unsafe_allow_html=True)
+        st.markdown("##")
+        st.markdown("##")
+
+
+    with col2:
+        st.markdown("##")
+        st.markdown("Polacy są trzecim miejscu w liczbie posiadanych aut na osobę w Unii Europejskiej.")
+
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("##")
+        st.markdown("Auta elektryczne stanowią zaledwie **~0.324%** wszystkich samochodów w naszym kraju.")
+
+def analysis_desc():
+    st.markdown("Celem naszej analizy było sprawdzenie jaki wpływ na emisję dwutlenku węgla, miałaby zmiana samochodów spalinowych na samochody elektryczne lub transport publiczny")
+    st.markdown("Na potrzeby stworzenia modelu, przyjeliśmy następujące założenia:")
+    st.markdown("- Zmiana udziału samochodów spalinowych na rzecz innych środków komunikacji następuje natychmiastowo.")
+    st.markdown("- W momencie zmiany produkcja prądu (oraz jej koszty) rosną, na tyle, aby pokryć zapotrzebowanie.")
+    st.markdown("- Nie uwzględniamy kosztów produkcji pojazdów.")
+    st.markdown("- Przyjmujemy, że samochody spalinowe mają jednakowy poziom emisji oraz jednakowy średni roczny przebieg, będące średnimi wartościami.")
+    st.markdown("- Przyjmujemy, że samochody elektryczne mają jednakowy poziom zużycia prądu oraz jednakowy średni roczny przebieg, będące średnimi wartościami.")
+
+
 def car_slider() -> float:
+    st.markdown("##")
     st.markdown("#### Kierowcy, którzy zmienili samochody spalinowe na elektryczne")
     st.markdown("Procentowy udział kierowców aut elektrycznych")
     return st.slider('s1', min_value=0, max_value=100, label_visibility="collapsed") / 100
 
 
 def country_select() -> float:
+    st.markdown("##")
+    st.markdown("##### Miks energetyczny z kraju:")
     return float(country_emission[country_emission['country'] == \
-                            st.selectbox('##### Użyj intensywności emisji kraju', country_emission['country'].unique())]['co2_emission_intensity'])
+                            st.selectbox('##### Użyj intensywności emisji kraju', country_emission['country'].unique(), index=20, label_visibility="collapsed")]['co2_emission_intensity'])
 
 
 def bus_slider() -> float:
+    st.markdown("##")
     st.markdown("#### Kierowcy, którzy korzystają z samochodów spalinowych oraz autobusów")
+    st.markdown("##")
 
     col1, col2 = st.columns([1, 1])
 
@@ -120,27 +195,42 @@ def co2_kpi(old_co2, lost_co2, added_co2):
     new_co2 = old_co2 - lost_co2 + added_co2
 
     col1, col2, col3 = st.columns(3)
+
+    st.markdown("##")
+    st.markdown("##")
+
     with col1:
-        st.metric('Spadek CO2 z samochodów spalinowych',
+        st.markdown("##### Emisja CO2 z samochodów spalinowych")
+        st.metric('Emisja CO2 z samochodów spalinowych',
                   value=f'{lost_co2:,.0f} ton'.replace(',', ' '),
-                  delta=f'{(lost_co2 / old_co2) * 100:.2f}%')
+                  delta=f'{(lost_co2 / old_co2) * 100:.2f}%',
+                  label_visibility="collapsed")
     with col2:
-        st.metric('Wzrost CO2 z produkcji energii elektryczne',
+        st.markdown("##### Emisja CO2 z produkcji energii elektrycznej")
+        st.metric('Emisja CO2 z produkcji energii elektrycznej',
                   value=f'{added_co2:,.0f} ton'.replace(',', ' '),
                   delta=f'{(added_co2 / old_co2) * 100:.2f}%',
-                  delta_color="inverse")
+                  delta_color='inverse',
+                  label_visibility="collapsed")
     with col3:
+        st.markdown("##### Zmiana CO2")
         st.metric('Zmiana CO2',
                   value=f'{(added_co2 - lost_co2):,.0f} ton'.replace(',', ' '),
                   delta=f'{((new_co2 - old_co2) / old_co2) * 100:.2f}%',
-                  delta_color="inverse")
+                  delta_color="inverse",
+                  label_visibility="collapsed")
 
 
 def countries_bar_chart():
     chart = alt.Chart(country_emission).mark_bar().encode(
-        x=alt.X('country:N', sort='y'),
-        y='co2_emission_intensity:Q'
-    )
+        y=alt.Y('country:N', sort='x', title='Kraj'),
+        x=alt.X('co2_emission_intensity:Q', title='Emisja CO2 [g CO2/kWh]'),
+        color="country:N",
+        tooltip=[
+                alt.Tooltip("country:N", title="Kraj"),
+                alt.Tooltip("co2_emission_intensity:Q", title="Emisja CO2"),
+            ],
+    ).interactive()
 
     st.altair_chart(chart, use_container_width=True)
 
@@ -185,8 +275,6 @@ def dashboard():
     added_co2 = added_car_co2 + added_bus_co2
 
     co2_kpi(BASE_CO2_PER_YEAR, lost_co2, added_co2)
-
-    countries_bar_chart()
 
     gwh_par(added_gwh, production_gwh)
 
