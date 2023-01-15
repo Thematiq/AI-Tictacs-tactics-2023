@@ -117,15 +117,6 @@ def analysis_desc():
     st.markdown("- Przyjmujemy, że samochody elektryczne mają jednakowy poziom zużycia prądu oraz jednakowy średni roczny przebieg, będące średnimi wartościami.")
 
 
-def variants():
-    st.markdown("Opracowaliśmy i przeanalizowaliśmy 5 scenariuszy:")
-    st.markdown("- **Wariant 1**: X% kierowców wymienia samochód spalinowy na samochód elektryczny. Miks energetyczny pozostaje bez zmian.")
-    st.markdown("- **Wariant 2**: to samo co wariant 1, ale zakładamy wzrost udziału OZE przy produkcji potrzebnej energii.")
-    st.markdown("- **Wariant 3**: X% kierowców w Y% sytuacji wybiera podróż autobusem zamiast samochodem spalinowym. Miks energetyczny pozostaje bez zmian.")
-    st.markdown("- **Wariant 4**: X% kierowców w Y% sytuacji wybiera podróż autobusem zamiast samochodem spalinowym, a Z% kierowców wymiania samochód na elektryczny. Miks energetyczny pozostaje bez zmian.")    
-    st.markdown("- **Wariant 5**: X% kierowców w Y% sytuacji wybiera podróż autobusem zamiast samochodem spalinowym, a Z% kierowców wymiania samochód na elektryczny. Zakładamy wzrost udziału OZE przy produkcji potrzebnej energii")
-    st.markdown("- **Wariant 6**: Przeprowadziliśmy symulacje przyjmując miks energetyczny z innego kraju")
-
 def car_slider() -> float:
     st.markdown("##")
     st.markdown("#### Kierowcy, którzy zmienili samochody spalinowe na elektryczne")
@@ -196,7 +187,6 @@ def countries_bar_chart():
                 alt.Tooltip("country:N", title="Kraj"),
                 alt.Tooltip("co2_emission_intensity:Q", title="Emisja CO2"),
             ],
-
     ).interactive()
 
     st.altair_chart(chart, use_container_width=True)
@@ -229,8 +219,6 @@ def dashboard():
 
     co2_kpi(BASE_CO2_PER_YEAR, lost_co2, added_co2)
 
-    st.markdown("### Analiza scenariuszy")
-    variants()
 
 
 
