@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
+import altair as alt
 import leafmap.foliumap as leafmap
 
 from streamlit_echarts import st_echarts
-
 
 # http://www.cepik.gov.pl/statystyki
 CARS_IN_POLAND = 19_178_911
@@ -25,10 +25,12 @@ ENERGY_LOSS = (0.1 + 0.25) / 2
 
 BASE_CO2_PER_YEAR = COMBUSTION_CARS * CO2_PER_KM * KM_PER_YEAR * KG_TO_TON
 
+
 def co2_map():
     st.markdown("### Emisja CO2 w Europie")
     st.markdown("Polskie elektrownie są w czołówce najbardziej emisyjnych elektrownii w Europie.")
-    st.markdown("Aż 70% energii w Polsce jest produkowanej w oparciu o węgiel kamiennny lub brunatny. Są to najbardziej emisyjne rodzaje pozyskiwania energii.")
+    st.markdown(
+        "Aż 70% energii w Polsce jest produkowanej w oparciu o węgiel kamiennny lub brunatny. Są to najbardziej emisyjne rodzaje pozyskiwania energii.")
 
     filepath = "./datasets/co2_emission_country.csv"
     m = leafmap.Map(center=[50, 20], zoom=4, tiles="stamentoner", max_zoom=5, min_zoom=3)
@@ -43,6 +45,7 @@ def co2_map():
     m.to_streamlit(height=700)
     st.markdown("Źródło: Dane dla 2016r. z EEA Europe")
 
+
 def mobility():
     st.markdown("Polacy są trzecim miejscu w liczbie posiadanych aut na osobę w Unii Europejskiej.")
     st.markdown("Auta elektryczne stanowią zaledwie **~0.32%** wszystkich samochodów w naszym kraju.")
@@ -51,10 +54,14 @@ def mobility():
 emission_csv = pd.read_csv('datasets/co2-elektrownie.csv', encoding='latin2', sep=';')
 production_csv = pd.read_csv('datasets/energia.csv', encoding='latin2', sep=';')
 electric_car_csv = pd.read_csv('datasets/electric.csv')
+country_emission = pd.read_csv('datasets/co2_emission_country.csv')
 
-powerplant_co2 = emission_csv[(emission_csv['Rok'] == 2020) & (emission_csv['Wyszczególnienie'].str.contains('Region'))]['Emisja CO2 [t]'].sum()
-production_gwh = production_csv[(production_csv['Parametr'] == 'RAZEM') & (production_csv['Rok'] == '2020') & (production_csv['Zmienna'] == 'Produkcja energii elektrycznej')]\
-                ['Dane'].str.replace(',', '.').astype(float)
+powerplant_co2 = \
+emission_csv[(emission_csv['Rok'] == 2020) & (emission_csv['Wyszczególnienie'].str.contains('Region'))][
+    'Emisja CO2 [t]'].sum()
+production_gwh = production_csv[(production_csv['Parametr'] == 'RAZEM') & (production_csv['Rok'] == '2020') & (
+            production_csv['Zmienna'] == 'Produkcja energii elektrycznej')] \
+    ['Dane'].str.replace(',', '.').astype(float)
 # Wh per km
 electric_car_eff = electric_car_csv['Efficiency'].str.split(' ', 0).str[0].median()
 
@@ -67,14 +74,15 @@ print(f'CO2 PER GWH {CO2_PER_GWH}')
 
 CO2_PER_KM_ELECTRIC_CAR = CO2_PER_GWH * electric_car_eff * WH_TO_GWH * (1 / (1 - ENERGY_LOSS))
 
-
-st.set_page_config(layout='wide')
-
-
 def car_slider() -> float:
     st.markdown("#### Kierowcy, którzy zmienili samochody spalinowe na elektryczne")
     st.markdown("Procentowy udział kierowców aut elektrycznych")
     return st.slider('s1', min_value=0, max_value=100, label_visibility="collapsed") / 100
+
+
+def country_select() -> float:
+    return float(country_emission[country_emission['country'] == \
+                            st.selectbox('##### Użyj intensywności emisji kraju', country_emission['country'].unique())]['co2_emission_intensity']) * 1000
 
 
 def bus_slider() -> float:
@@ -107,9 +115,18 @@ def co2_kpi(old_co2, lost_co2, added_co2):
                   delta=f'{(added_co2 / old_co2) * 100:.2f}%')
     with col3:
         st.metric('Zmiana CO2',
-                  value=f'{(lost_co2 - added_co2):,.0f} ton'.replace(',', ' '),
-                  delta=f'{((old_co2 - new_co2) / old_co2)*100:.2f}%',
+                  value=f'{(added_co2 - lost_co2):,.0f} ton'.replace(',', ' '),
+                  delta=f'{((new_co2 - old_co2) / old_co2) * 100:.2f}%',
                   delta_color="inverse")
+
+
+def countries_bar_chart():
+    chart = alt.Chart(country_emission).mark_bar().encode(
+        x=alt.X('country:N', sort='y'),
+        y='co2_emission_intensity:Q'
+    )
+
+    st.altair_chart(chart, use_container_width=True)
 
 
 def dashboard():
@@ -124,11 +141,17 @@ def dashboard():
     st.markdown("### Symulacja emisji CO2 w zależności od wykorzystywanych środków transportu")
     car_change = car_slider()
     bus_change = bus_slider()
+    co2_per_gwh = country_select()
+    co2_per_km_el = co2_per_gwh * electric_car_eff * WH_TO_GWH * (1 / (1 - ENERGY_LOSS))
 
     lost_co2 = COMBUSTION_CARS * (car_change + bus_change) * CO2_PER_KM * KM_PER_YEAR * KG_TO_TON
-    added_car_co2 = COMBUSTION_CARS * car_change * CO2_PER_KM_ELECTRIC_CAR * KM_PER_YEAR * KG_TO_TON
+    added_car_co2 = COMBUSTION_CARS * car_change * co2_per_km_el * KM_PER_YEAR * KG_TO_TON
+    added_bus_co2 = 0
+    added_co2 = added_car_co2 + added_bus_co2
 
-    co2_kpi(BASE_CO2_PER_YEAR, lost_co2, added_car_co2)
+    co2_kpi(BASE_CO2_PER_YEAR, lost_co2, added_co2)
+
+    countries_bar_chart()
 
 
 dashboard()
