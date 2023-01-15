@@ -266,13 +266,13 @@ def dashboard():
 
     lost_co2 = COMBUSTION_CARS * (car_change + bus_change) * CO2_PER_KM * KM_PER_YEAR * KG_TO_TON
 
-    added_gwh = COMBUSTION_CARS * car_change * electric_car_eff * WH_TO_GWH * (1 / (1 - ENERGY_LOSS)) * KM_PER_YEAR
-
     added_car_co2 = COMBUSTION_CARS * car_change * co2_per_km_el * KM_PER_YEAR
     added_bus_co2 = (COMBUSTION_CARS * bus_change / (AVG_PASSENGERS / AVG_PEOPLE_IN_CAR)) *\
                     AVG_KM_BUS * co2_per_km_bus
 
     added_co2 = added_car_co2 + added_bus_co2
+
+    added_gwh = added_co2 / co2_per_gwh
 
     co2_kpi(BASE_CO2_PER_YEAR, lost_co2, added_co2)
 
